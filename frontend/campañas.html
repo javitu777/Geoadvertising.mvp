@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campañas Activas</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; background: #f4f4f4; }
+    h1 { text-align: center; margin-bottom: 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; }
+    .card {
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card img {
+      width: 100%;
+      border-radius: 6px;
+    }
+    .card h2 { margin: 0.5rem 0 0.3rem; }
+    .card p { margin: 0.2rem 0; color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Campañas activas</h1>
+  <div class="grid" id="campanas"></div>
+
+  <script>
+    async function cargarCampanas() {
+      const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns");
+      const campanas = await res.json();
+      const contenedor = document.getElementById("campanas");
+
+      if (!campanas.length) {
+        contenedor.innerHTML = '<p>No hay campañas activas.</p>';
+        return;
+      }
+
+      campanas.forEach(c => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${c.imageUrl}" alt="Anuncio">
+          <h2>${c.title}</h2>
+          <p><strong>Anunciante:</strong> ${c.advertiser}</p>
+          <p><strong>Ubicación:</strong> ${c.targetLocation}</p>
+        `;
+        contenedor.appendChild(card);
+      });
+    }
+
+    cargarCampanas();
+  </script>
+</body>
+</html>
