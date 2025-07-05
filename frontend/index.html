@@ -1,54 +1,119 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Crear Campaña Publicitaria</title>
+  <title>Formulario de Campaña</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <style>
-    body { font-family: sans-serif; background: #f9f9f9; padding: 2rem; }
-    form { background: #fff; padding: 2rem; border-radius: 10px; max-width: 500px; margin: auto; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h1 { text-align: center; margin-bottom: 1.5rem; }
-    input, button { width: 100%; padding: 0.8rem; margin-top: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 5px; }
-    button { background-color: #28a745; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #218838; }
-    .msg { text-align: center; margin-top: 1rem; }
+    body { font-family: sans-serif; padding: 2rem; background: #f2f2f2; }
+    h1 { text-align: center; margin-bottom: 2rem; }
+    form { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 10px; }
+    label { display: block; margin-top: 1rem; }
+    input, textarea { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; }
+    #map { height: 300px; margin-top: 1rem; display: none; }
+    .success { text-align: center; color: green; margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <form id="campaignForm">
-    <h1>Subir Nueva Campaña</h1>
-    <input type="text" id="advertiser" placeholder="Nombre del anunciante" required />
-    <input type="text" id="title" placeholder="Título del anuncio" required />
-    <input type="text" id="imageUrl" placeholder="URL de la imagen (opcional)" />
-    <input type="text" id="targetLocation" placeholder="Ubicación objetivo (ej: Madrid)" required />
-    <button type="submit">Enviar</button>
-    <div class="msg" id="msg"></div>
+  <h1>Subir nueva campaña</h1>
+  <form id="campaign-form">
+    <label>Nombre del anunciante</label>
+    <input type="text" name="advertiser" required />
+
+    <label>Título del anuncio</label>
+    <input type="text" name="title" required />
+
+    <label>URL de la imagen</label>
+    <input type="text" name="imageUrl" required />
+
+    <label>Segmentación:</label>
+    <input type="radio" name="segment" value="ciudad" checked onclick="toggleSegment('ciudad')" /> Por ciudad
+    <input type="radio" name="segment" value="mapa" onclick="toggleSegment('mapa')" /> Área personalizada
+
+    <div id="ciudad-container">
+      <label>Ciudad objetivo</label>
+      <input type="text" name="targetLocation" />
+    </div>
+
+    <div id="map"></div>
+
+    <button type="submit" style="margin-top: 1rem">Enviar</button>
+    <div class="success" id="success"></div>
   </form>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script>
-    document.getElementById('campaignForm').addEventListener('submit', async function (e) {
-      e.preventDefault();
+    let drawnCoords = null;
 
-      const data = {
-        advertiser: document.getElementById('advertiser').value,
-        title: document.getElementById('title').value,
-        imageUrl: document.getElementById('imageUrl').value,
-        targetLocation: document.getElementById('targetLocation').value
+    const form = document.getElementById("campaign-form");
+    const successMsg = document.getElementById("success");
+
+    function toggleSegment(tipo) {
+      document.getElementById("ciudad-container").style.display = tipo === 'ciudad' ? 'block' : 'none';
+      document.getElementById("map").style.display = tipo === 'mapa' ? 'block' : 'none';
+    }
+
+    // Mapa
+    const map = L.map("map").setView([40.4168, -3.7038], 6);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+    const drawControl = new L.Control.Draw({
+      draw: {
+        polygon: true,
+        circle: true,
+        rectangle: true,
+        marker: false,
+        polyline: false
+      },
+      edit: {
+        featureGroup: new L.FeatureGroup().addTo(map)
+      }
+    });
+    map.addControl(drawControl);
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+      drawnCoords = e.layer.toGeoJSON();
+      drawControl.options.edit.featureGroup.clearLayers();
+      drawControl.options.edit.featureGroup.addLayer(e.layer);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const body = {
+        advertiser: formData.get("advertiser"),
+        title: formData.get("title"),
+        imageUrl: formData.get("imageUrl"),
       };
 
-      const response = await fetch('https://geoadvertising-mvp-4.onrender.com/api/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+      const segment = formData.get("segment");
+      if (segment === "ciudad") {
+        body.targetType = "ciudad";
+        body.targetLocation = formData.get("targetLocation");
+      } else if (segment === "mapa" && drawnCoords) {
+        body.targetType = "mapa";
+        body.targetArea = drawnCoords;
+      } else {
+        alert("Por favor, dibuja un área en el mapa.");
+        return;
+      }
+
+      const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       });
 
-      const msgDiv = document.getElementById('msg');
-
-      if (response.ok) {
-        msgDiv.innerText = '✅ Campaña subida con éxito';
-        document.getElementById('campaignForm').reset();
+      if (res.ok) {
+        form.reset();
+        successMsg.textContent = "✅ Campaña subida con éxito";
+        drawControl.options.edit.featureGroup.clearLayers();
+        drawnCoords = null;
       } else {
-        msgDiv.innerText = '❌ Error al subir la campaña';
+        successMsg.textContent = "❌ Error al subir la campaña";
       }
     });
   </script>
