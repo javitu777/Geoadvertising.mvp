@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -62,12 +62,11 @@
         ciudad.style.display = 'none';
         mapa.style.display = 'block';
         setTimeout(() => {
-          map.invalidateSize();  // Forzar a redibujar
+          map.invalidateSize();
         }, 200);
       }
     }
 
-    // Inicializar mapa
     const map = L.map("map").setView([40.4168, -3.7038], 6);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
