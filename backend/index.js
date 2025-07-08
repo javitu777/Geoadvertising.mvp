@@ -48,7 +48,7 @@ app.post("/api/campaigns", (req, res) => {
     [advertiser, title, imageUrl, targetType, targetLocation || null, targetAreaStr],
     function (err) {
       if (err) {
-        console.error(err);
+        console.error("DB error:", err);
         return res.status(500).json({ error: "Database error" });
       }
       res.json({ id: this.lastID });
