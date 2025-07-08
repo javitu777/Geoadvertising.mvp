@@ -1,12 +1,12 @@
  const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
-app.use(bodyParser.json());
+
 const app = express();
 const port = process.env.PORT || 10000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // 👈 Importante: usa express.json directamente
 
 const db = new sqlite3.Database("./ads.db");
 
@@ -51,34 +51,6 @@ app.post("/api/campaigns", (req, res) => {
         return res.status(500).json({ error: "Database error" });
       }
       res.json({ id: this.lastID });
-    }
-  );
-});
-
-app.get("/api/get-ad", (req, res) => {
-  const { location } = req.query;
-
-  if (!location) {
-    return res.status(400).json({ error: "Missing location" });
-  }
-
-  db.get(
-    `SELECT * FROM campaigns WHERE targetType = 'ciudad' AND targetLocation = ? ORDER BY RANDOM() LIMIT 1`,
-    [location],
-    (err, row) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      if (!row) {
-        return res.status(404).json({ error: "No ad found" });
-      }
-
-      res.json({
-        name: row.title,
-        imageUrl: row.imageUrl,
-      });
     }
   );
 });
