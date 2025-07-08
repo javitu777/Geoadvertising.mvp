@@ -1,82 +1,57 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Formulario de Campaña</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <title>Formulario GeoPublicidad</title>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <style>
-    body { font-family: sans-serif; padding: 2rem; background: #f2f2f2; }
-    h1 { text-align: center; margin-bottom: 2rem; }
-    form { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 10px; }
-    label { display: block; margin-top: 1rem; }
-    input, textarea { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 5px; }
-    #map { height: 300px; margin-top: 1rem; display: none; }
-    .success { text-align: center; color: green; margin-top: 1rem; }
+    body { font-family: sans-serif; padding: 2rem; }
+    #map { height: 300px; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <h1>Subir nueva campaña</h1>
+  <h1>Subir campaña</h1>
   <form id="campaign-form">
-    <label>Nombre del anunciante</label>
-    <input type="text" name="advertiser" required />
+    <label>Nombre del anunciante: <input type="text" name="advertiser" required /></label><br><br>
+    <label>Título del anuncio: <input type="text" name="title" required /></label><br><br>
+    <label>URL de imagen: <input type="text" name="imageUrl" required /></label><br><br>
 
-    <label>Título del anuncio</label>
-    <input type="text" name="title" required />
+    <label>Segmentación:
+      <select id="segmentacion" name="targetType">
+        <option value="ciudad">Por ciudad</option>
+        <option value="mapa">Área personalizada</option>
+      </select>
+    </label><br><br>
 
-    <label>URL de la imagen</label>
-    <input type="text" name="imageUrl" required />
-
-    <label>Segmentación:</label>
-    <input type="radio" name="segment" value="ciudad" checked onclick="toggleSegment('ciudad')" /> Por ciudad
-    <input type="radio" name="segment" value="mapa" onclick="toggleSegment('mapa')" /> Área personalizada
-
-    <div id="ciudad-container">
-      <label>Ciudad objetivo</label>
-      <input type="text" name="targetLocation" />
+    <div id="ciudad-section">
+      <label>Ciudad: <input type="text" name="targetLocation" /></label><br><br>
     </div>
 
-    <div id="map"></div>
+    <div id="map-section" style="display:none;">
+      <div id="map"></div>
+    </div>
 
-    <button type="submit" style="margin-top: 1rem">Enviar</button>
-    <div class="success" id="success"></div>
+    <button type="submit">Enviar</button>
   </form>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script>
     let drawnCoords = null;
 
-    const form = document.getElementById("campaign-form");
-    const successMsg = document.getElementById("success");
+    // Mapa y herramientas de dibujo
+    const map = L.map('map').setView([40.4168, -3.7038], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    function toggleSegment(tipo) {
-      const ciudad = document.getElementById("ciudad-container");
-      const mapa = document.getElementById("map");
-
-      if (tipo === 'ciudad') {
-        ciudad.style.display = 'block';
-        mapa.style.display = 'none';
-      } else {
-        ciudad.style.display = 'none';
-        mapa.style.display = 'block';
-        setTimeout(() => {
-          map.invalidateSize();
-        }, 200);
-      }
-    }
-
-    const map = L.map("map").setView([40.4168, -3.7038], 6);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-    const drawnItems = new L.FeatureGroup().addTo(map);
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
 
     const drawControl = new L.Control.Draw({
       draw: {
         polygon: true,
-        circle: true,
         rectangle: true,
+        circle: false,
         marker: false,
         polyline: false
       },
@@ -87,45 +62,62 @@
     map.addControl(drawControl);
 
     map.on(L.Draw.Event.CREATED, function (e) {
-      drawnCoords = e.layer.toGeoJSON();
       drawnItems.clearLayers();
       drawnItems.addLayer(e.layer);
+      drawnCoords = e.layer.toGeoJSON();
     });
 
+    // Mostrar secciones
+    const segmentacion = document.getElementById("segmentacion");
+    segmentacion.addEventListener("change", () => {
+      document.getElementById("ciudad-section").style.display = segmentacion.value === "ciudad" ? "block" : "none";
+      document.getElementById("map-section").style.display = segmentacion.value === "mapa" ? "block" : "none";
+    });
+
+    // Envío del formulario
+    const form = document.getElementById("campaign-form");
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const formData = new FormData(form);
-      const body = {
-        advertiser: formData.get("advertiser"),
-        title: formData.get("title"),
-        imageUrl: formData.get("imageUrl"),
+
+      const data = {
+        advertiser: form.advertiser.value,
+        title: form.title.value,
+        imageUrl: form.imageUrl.value,
+        targetType: form.targetType.value,
       };
 
-      const segment = formData.get("segment");
-      if (segment === "ciudad") {
-        body.targetType = "ciudad";
-        body.targetLocation = formData.get("targetLocation");
-      } else if (segment === "mapa" && drawnCoords) {
-        body.targetType = "mapa";
-        body.targetArea = drawnCoords;
-      } else {
-        alert("Por favor, dibuja un área en el mapa.");
-        return;
+      if (data.targetType === "ciudad") {
+        data.targetLocation = form.targetLocation.value;
+        if (!data.targetLocation) {
+          alert("Introduce una ciudad.");
+          return;
+        }
+      } else if (data.targetType === "mapa") {
+        if (!drawnCoords) {
+          alert("Por favor, dibuja un área en el mapa.");
+          return;
+        }
+        data.targetArea = drawnCoords;
       }
 
-      const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      try {
+        const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
 
-      if (res.ok) {
-        form.reset();
-        successMsg.textContent = "✅ Campaña subida con éxito";
-        drawnItems.clearLayers();
-        drawnCoords = null;
-      } else {
-        successMsg.textContent = "❌ Error al subir la campaña";
+        if (res.ok) {
+          alert("✅ Campaña subida con éxito");
+          form.reset();
+          drawnItems.clearLayers();
+          drawnCoords = null;
+        } else {
+          alert("❌ Error al subir la campaña");
+        }
+      } catch (error) {
+        alert("❌ Error de red");
+        console.error(error);
       }
     });
   </script>
