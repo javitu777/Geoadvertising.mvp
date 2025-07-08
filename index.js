@@ -1,58 +1,89 @@
-const express = require('express');
-const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+ const express = require("express");
+const cors = require("cors");
+const sqlite3 = require("sqlite3").verbose();
+const bodyParser = require("body-parser");
+
 const app = express();
+const port = process.env.PORT || 10000;
 
-const PORT = process.env.PORT || 3001;
-
-// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Conexión a SQLite
-const dbPath = path.resolve(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+const db = new sqlite3.Database("./ads.db");
 
-// Crear tabla si no existe
-db.run(`
-  CREATE TABLE IF NOT EXISTS campaigns (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    advertiser TEXT NOT NULL,
-    title TEXT NOT NULL,
-    imageUrl TEXT,
-    targetLocation TEXT NOT NULL
-  )
-`);
-
-// Ruta de prueba
-app.get('/', (req, res) => {
-  res.send('GeoAdvertising API is running.');
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      advertiser TEXT,
+      title TEXT,
+      imageUrl TEXT,
+      targetType TEXT,
+      targetLocation TEXT,
+      targetArea TEXT
+    )
+  `);
 });
 
-// Obtener campañas
-app.get('/api/campaigns', (req, res) => {
-  db.all('SELECT * FROM campaigns', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-});
+app.post("/api/campaigns", (req, res) => {
+  const { advertiser, title, imageUrl, targetType, targetLocation, targetArea } = req.body;
 
-// Crear campaña
-app.post('/api/campaigns', (req, res) => {
-  const { advertiser, title, imageUrl, targetLocation } = req.body;
-  if (!advertiser || !title || !targetLocation) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!advertiser || !title || !imageUrl || !targetType) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const stmt = db.prepare('INSERT INTO campaigns (advertiser, title, imageUrl, targetLocation) VALUES (?, ?, ?, ?)');
-  stmt.run(advertiser, title, imageUrl, targetLocation, function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID });
-  });
+  if (targetType === "ciudad" && !targetLocation) {
+    return res.status(400).json({ error: "Missing targetLocation" });
+  }
+
+  if (targetType === "mapa" && !targetArea) {
+    return res.status(400).json({ error: "Missing targetArea" });
+  }
+
+  const targetAreaStr = targetArea ? JSON.stringify(targetArea) : null;
+
+  db.run(
+    `INSERT INTO campaigns (advertiser, title, imageUrl, targetType, targetLocation, targetArea)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [advertiser, title, imageUrl, targetType, targetLocation || null, targetAreaStr],
+    function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json({ id: this.lastID });
+    }
+  );
 });
 
-// Arrancar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
+app.get("/api/get-ad", (req, res) => {
+  const { location } = req.query;
+
+  if (!location) {
+    return res.status(400).json({ error: "Missing location" });
+  }
+
+  db.get(
+    `SELECT * FROM campaigns WHERE targetType = 'ciudad' AND targetLocation = ? ORDER BY RANDOM() LIMIT 1`,
+    [location],
+    (err, row) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Database error" });
+      }
+
+      if (!row) {
+        return res.status(404).json({ error: "No ad found" });
+      }
+
+      res.json({
+        name: row.title,
+        imageUrl: row.imageUrl,
+      });
+    }
+  );
+});
+
+app.listen(port, () => {
+  console.log(`Servidor backend escuchando en http://localhost:${port}`);
 });
