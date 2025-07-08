@@ -1,8 +1,7 @@
  const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
-const bodyParser = require("body-parser");
-
+app.use(bodyParser.json());
 const app = express();
 const port = process.env.PORT || 10000;
 
