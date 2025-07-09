@@ -1,0 +1,53 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GeoAdvertising SDK Documentation</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 2rem; line-height: 1.6; background: #f9f9f9; }
+    h1, h2 { color: #333; }
+    pre { background: #eee; padding: 1rem; border-radius: 5px; overflow-x: auto; }
+    code { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <h1>📦 GeoAdvertising SDK</h1>
+  <p>
+    Integrate real-time geolocated ads directly into your HTML5 games with just a few lines of code.
+    This SDK allows you to fetch ads by city and display them dynamically in your game interface.
+  </p>
+
+  <h2>🚀 Getting Started</h2>
+  <p>Add the following code to your HTML game page:</p>
+
+  <pre><code>&lt;div id="geo-ad-slot" style="position:absolute; bottom:10px; left:10px;"&gt;&lt;/div&gt;
+
+&lt;script src="https://geoadvertising-frontend.onrender.com/sdk.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  GeoAd.getAd("Madrid", document.getElementById("geo-ad-slot"));
+&lt;/script&gt;
+</code></pre>
+
+  <h2>🌍 Targeting</h2>
+  <p>
+    Ads are served based on the city you provide in <code>GeoAd.getAd("CITY")</code>. Future versions will support advanced targeting by map zones.
+  </p>
+
+  <h2>🔧 SDK Function Reference</h2>
+  <ul>
+    <li><code>GeoAd.getAd(location, containerElement)</code> – Loads and renders an ad for the given location inside the provided DOM container.</li>
+  </ul>
+
+  <h2>🧪 Example Result</h2>
+  <p>The SDK will render the ad with its title and image:</p>
+  <pre><code>
++-------------------------+
+| 🍔 promo hamburguesas   |
+| [   Ad image here    ] |
++-------------------------+
+</code></pre>
+
+  <h2>📬 Need Help?</h2>
+  <p>If you're a developer and need integration support, contact us at <strong>sdk@geoadvertising.com</strong>.</p>
+</body>
+</html>
