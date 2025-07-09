@@ -1,60 +1,48 @@
-const express = require("express");
-const cors = require("cors");
+ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
+const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 10000;
+const db = new sqlite3.Database("./anuncios.db");
 
 app.use(cors());
-app.use(express.json()); // 👈 Aquí está la clave
+app.use(express.json());
 
-const db = new sqlite3.Database("./ads.db");
+// ⚠️ API Keys válidas temporales (en producción esto iría en una base de datos)
+const apiKeys = {
+  "juego-demo-123": "Juego de Carreras",
+  "abc456": "Cliente de prueba"
+};
 
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS campaigns (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      advertiser TEXT,
-      title TEXT,
-      imageUrl TEXT,
-      targetType TEXT,
-      targetLocation TEXT,
-      targetArea TEXT
-    )
-  `);
-});
+// Endpoint para obtener un anuncio
+app.get("/api/get-ad", (req, res) => {
+  const { location, key } = req.query;
 
-app.post("/api/campaigns", (req, res) => {
-  const { advertiser, title, imageUrl, targetType, targetLocation, targetArea } = req.body;
-
-  if (!advertiser || !title || !imageUrl || !targetType) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (!key || !apiKeys[key]) {
+    return res.status(403).json({ error: "Invalid or missing API Key" });
   }
 
-  if (targetType === "ciudad" && !targetLocation) {
-    return res.status(400).json({ error: "Missing targetLocation" });
+  if (!location) {
+    return res.status(400).json({ error: "Missing location" });
   }
 
-  if (targetType === "mapa" && !targetArea) {
-    return res.status(400).json({ error: "Missing targetArea" });
-  }
-
-  const targetAreaStr = targetArea ? JSON.stringify(targetArea) : null;
-
-  db.run(
-    `INSERT INTO campaigns (advertiser, title, imageUrl, targetType, targetLocation, targetArea)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [advertiser, title, imageUrl, targetType, targetLocation || null, targetAreaStr],
-    function (err) {
+  db.all(
+    `SELECT * FROM campañas WHERE targetType = 'ciudad' AND LOWER(targetArea) = LOWER(?) ORDER BY RANDOM() LIMIT 1`,
+    [location],
+    (err, rows) => {
       if (err) {
-        console.error("DB error:", err);
         return res.status(500).json({ error: "Database error" });
       }
-      res.json({ id: this.lastID });
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "No ads found" });
+      }
+      res.json(rows[0]);
     }
   );
 });
 
+// Iniciar servidor
 app.listen(port, () => {
   console.log(`Servidor backend escuchando en http://localhost:${port}`);
 });
