@@ -1,25 +1,29 @@
- // sdk.js
+ const GeoAd = {
+  getAd: async function (location, containerElement, apiKey) {
+    if (!apiKey) {
+      containerElement.innerHTML = "<p style='color:red'>⚠️ Missing API Key</p>";
+      return;
+    }
 
-window.GeoAd = {
-  getAd: async function (location, containerElement) {
     try {
-      const res = await fetch(`https://geoadvertising-mvp-4.onrender.com/api/get-ad?location=${encodeURIComponent(location)}`);
-      const anuncio = await res.json();
-
-      if (!anuncio || !anuncio.imageUrl) {
-        containerElement.innerHTML = "<p>No ads available</p>";
-        return;
+      const res = await fetch(
+        `https://geoadvertising-mvp-4.onrender.com/api/get-ad?location=${location}&key=${apiKey}`
+      );
+      if (!res.ok) {
+        throw new Error("No ad found or invalid API Key");
       }
 
+      const anuncio = await res.json();
+
       containerElement.innerHTML = `
-        <div style="background:#fff; padding:10px; border:1px solid #ccc; max-width:320px;">
-          <h4>${anuncio.title}</h4>
-          <img src="${anuncio.imageUrl}" alt="Ad image" style="width:100%;">
+        <div style="border: 1px solid #ccc; padding: 10px; max-width: 300px;">
+          <h3>${anuncio.title}</h3>
+          <img src="${anuncio.imageUrl}" alt="Ad" style="width: 100%;" />
+          <p style="font-size: 0.9em; color: #555;">Anunciante: ${anuncio.advertiser}</p>
         </div>
       `;
-    } catch (error) {
-      containerElement.innerHTML = "<p>Error loading ad</p>";
-      console.error("GeoAd Error:", error);
+    } catch (err) {
+      containerElement.innerHTML = `<p style="color:red">❌ ${err.message}</p>`;
     }
-  }
+  },
 };
