@@ -1,0 +1,67 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Subir campaña por ciudad - SIMBIOSIS</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; background: #f9f9f9; }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+    label, input { display: block; margin-bottom: 0.5rem; }
+    input { padding: 0.5rem; width: 300px; max-width: 100%; }
+    button { padding: 0.5rem 1rem; background: #3f51b5; color: white; border: none; border-radius: 4px; }
+    #mensaje { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>📢 Crear campaña por ciudad (SIMBIOSIS)</h1>
+
+  <form id="campaign-form">
+    <label>Anunciante:</label>
+    <input type="text" id="advertiser" value="Javier" />
+
+    <label>Título del anuncio:</label>
+    <input type="text" id="title" value="Hamburguesas en Madrid" />
+
+    <label>URL de imagen:</label>
+    <input type="text" id="imageUrl" value="https://imag.bonviveur.com/hamburguesa-clasica.jpg" />
+
+    <label>Ciudad destino:</label>
+    <input type="text" id="city" value="Madrid" />
+
+    <button type="submit">Subir campaña</button>
+  </form>
+
+  <p id="mensaje"></p>
+
+  <script>
+    document.getElementById("campaign-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const data = {
+        advertiser: document.getElementById("advertiser").value,
+        title: document.getElementById("title").value,
+        imageUrl: document.getElementById("imageUrl").value,
+        targetType: "ciudad",
+        targetArea: document.getElementById("city").value
+      };
+
+      try {
+        const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          document.getElementById("mensaje").innerText = "✅ Campaña subida correctamente";
+        } else {
+          document.getElementById("mensaje").innerText = "❌ Error: " + (result.error || "Desconocido");
+        }
+      } catch (err) {
+        document.getElementById("mensaje").innerText = "❌ Error al enviar la campaña";
+      }
+    });
+  </script>
+</body>
+</html>
