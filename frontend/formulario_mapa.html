@@ -1,67 +1,13 @@
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Campañas activas con mapa</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; background: #f0f0f0; }
-    h1 { text-align: center; padding: 1rem; }
-    #map { height: 500px; width: 100%; }
-    .panel {
-      padding: 1rem;
-      background: white;
-      max-width: 900px;
-      margin: auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .campana {
-      border-bottom: 1px solid #ddd;
-      padding: 1rem 0;
-    }
-    .campana img { width: 150px; border-radius: 4px; }
-  </style>
+  <meta charset="UTF-8" />
+  <title>Crear campaña - SIMBIOSIS</title>
 </head>
 <body>
-  <h1>Campañas activas</h1>
-  <div class="panel" id="listado"></div>
-  <div id="map"></div>
+  <h1>🗺️ Crear nueva campaña en SIMBIOSIS</h1>
+  <p>Elige si deseas anunciarte por ciudad o dibujando un área en el mapa.</p>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const listado = document.getElementById("listado");
-    const map = L.map("map").setView([40.4168, -3.7038], 6);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-    async function cargarCampanas() {
-      const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns");
-      const campanas = await res.json();
-
-      if (!campanas.length) {
-        listado.innerHTML = '<p>No hay campañas activas.</p>';
-        return;
-      }
-
-      campanas.forEach(c => {
-        const div = document.createElement("div");
-        div.className = "campana";
-        div.innerHTML = `
-          <h3>${c.title}</h3>
-          <p><strong>Anunciante:</strong> ${c.advertiser}</p>
-          <p><strong>Segmentación:</strong> ${c.targetType === 'mapa' ? 'Área personalizada' : c.targetLocation}</p>
-          <img src="${c.imageUrl}" alt="imagen" />
-        `;
-        listado.appendChild(div);
-
-        if (c.targetType === 'mapa' && c.targetArea && c.targetArea.geometry) {
-          const layer = L.geoJSON(c.targetArea, { style: { color: 'blue' } }).addTo(map);
-          map.fitBounds(layer.getBounds());
-        }
-      });
-    }
-
-    cargarCampanas();
-  </script>
+  <!-- Aquí va el formulario -->
 </body>
 </html>
