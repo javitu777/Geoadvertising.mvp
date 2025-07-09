@@ -2,124 +2,16 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Formulario GeoPublicidad</title>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-  <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    #map { height: 300px; margin-bottom: 1rem; }
-  </style>
+  <title>SIMBIOSIS - Plataforma de Anuncios Geolocalizados</title>
 </head>
 <body>
-  <h1>Subir campaña</h1>
-  <form id="campaign-form">
-    <label>Nombre del anunciante: <input type="text" name="advertiser" required /></label><br><br>
-    <label>Título del anuncio: <input type="text" name="title" required /></label><br><br>
-    <label>URL de imagen: <input type="text" name="imageUrl" required /></label><br><br>
+  <h1>🌐 Bienvenido a <strong>SIMBIOSIS</strong></h1>
+  <p>Publicidad que conecta jugadores, creadores y negocios locales.</p>
 
-    <label>Segmentación:
-      <select id="segmentacion" name="targetType">
-        <option value="ciudad">Por ciudad</option>
-        <option value="mapa">Área personalizada</option>
-      </select>
-    </label><br><br>
-
-    <div id="ciudad-section">
-      <label>Ciudad: <input type="text" name="targetLocation" /></label><br><br>
-    </div>
-
-    <div id="map-section" style="display:none;">
-      <div id="map"></div>
-    </div>
-
-    <button type="submit">Enviar</button>
-  </form>
-
-  <script>
-    let drawnCoords = null;
-
-    // Mapa y herramientas de dibujo
-    const map = L.map('map').setView([40.4168, -3.7038], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    const drawnItems = new L.FeatureGroup();
-    map.addLayer(drawnItems);
-
-    const drawControl = new L.Control.Draw({
-      draw: {
-        polygon: true,
-        rectangle: true,
-        circle: false,
-        marker: false,
-        polyline: false
-      },
-      edit: {
-        featureGroup: drawnItems
-      }
-    });
-    map.addControl(drawControl);
-
-    map.on(L.Draw.Event.CREATED, function (e) {
-      drawnItems.clearLayers();
-      drawnItems.addLayer(e.layer);
-      drawnCoords = e.layer.toGeoJSON();
-    });
-
-    // Mostrar secciones
-    const segmentacion = document.getElementById("segmentacion");
-    segmentacion.addEventListener("change", () => {
-      document.getElementById("ciudad-section").style.display = segmentacion.value === "ciudad" ? "block" : "none";
-      document.getElementById("map-section").style.display = segmentacion.value === "mapa" ? "block" : "none";
-    });
-
-    // Envío del formulario
-    const form = document.getElementById("campaign-form");
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const data = {
-        advertiser: form.advertiser.value,
-        title: form.title.value,
-        imageUrl: form.imageUrl.value,
-        targetType: form.targetType.value,
-      };
-
-      if (data.targetType === "ciudad") {
-        data.targetLocation = form.targetLocation.value;
-        if (!data.targetLocation) {
-          alert("Introduce una ciudad.");
-          return;
-        }
-      } else if (data.targetType === "mapa") {
-        if (!drawnCoords) {
-          alert("Por favor, dibuja un área en el mapa.");
-          return;
-        }
-        data.targetArea = drawnCoords;
-      }
-
-      try {
-        const res = await fetch("https://geoadvertising-mvp-4.onrender.com/api/campaigns", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        if (res.ok) {
-          alert("✅ Campaña subida con éxito");
-          form.reset();
-          drawnItems.clearLayers();
-          drawnCoords = null;
-        } else {
-          alert("❌ Error al subir la campaña");
-        }
-      } catch (error) {
-        alert("❌ Error de red");
-        console.error(error);
-      }
-    });
-  </script>
+  <ul>
+    <li><a href="campañas.html">📢 Ver campañas</a></li>
+    <li><a href="formulario_mapa.html">🗺️ Crear campaña</a></li>
+    <li><a href="sdk-doc.html">📄 Documentación del SDK</a></li>
+  </ul>
 </body>
 </html>
