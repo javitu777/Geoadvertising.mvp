@@ -1,18 +1,31 @@
- <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>SIMBIOSIS - Plataforma de Anuncios Geolocalizados</title>
-</head>
-<body>
-  <h1>🌐 Bienvenido a <strong>SIMBIOSIS</strong></h1>
-  <p>Publicidad que conecta jugadores, creadores y negocios locales.</p>
+ <form id="campaignForm">
+  <label>Nombre del anunciante:
+    <input type="text" id="advertiser" required />
+  </label>
 
-  <ul>
-    <li><a href="campañas.html">📢 Ver campañas</a></li>
-    <li><a href="formulario_mapa.html">🗺️ Crear campaña</a></li>
-    <li><a href="sdk-doc.html">📄 Documentación del SDK</a></li>
-  </ul>
-</body>
-</html>
+  <label>Título del anuncio:
+    <input type="text" id="title" required />
+  </label>
 
+  <label>URL de la imagen:
+    <input type="text" id="imageUrl" required />
+  </label>
+
+  <label>Tipo de segmentación:
+    <select id="targetType" required>
+      <option value="ciudad">Por ciudad</option>
+      <option value="mapa">Dibujando en mapa</option>
+    </select>
+  </label>
+
+  <div id="cityInput">
+    <label>Ciudad:
+      <input type="text" id="city" />
+    </label>
+  </div>
+
+  <div id="map"></div>
+
+  <button type="submit">Subir campaña</button>
+  <div id="status"></div>
+</form>
