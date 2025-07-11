@@ -1,48 +1,34 @@
- const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
-const cors = require("cors");
-
+ const express = require('express');
+const cors = require('cors');
 const app = express();
-const port = process.env.PORT || 10000;
-const db = new sqlite3.Database("./anuncios.db");
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
 
-// ⚠️ API Keys válidas temporales (en producción esto iría en una base de datos)
-const apiKeys = {
-  "juego-demo-123": "Juego de Carreras",
-  "abc456": "Cliente de prueba"
-};
+let campañas = [];
 
-// Endpoint para obtener un anuncio
-app.get("/api/get-ad", (req, res) => {
-  const { location, key } = req.query;
-
-  if (!key || !apiKeys[key]) {
-    return res.status(403).json({ error: "Invalid or missing API Key" });
-  }
-
-  if (!location) {
-    return res.status(400).json({ error: "Missing location" });
-  }
-
-  db.all(
-    `SELECT * FROM campañas WHERE targetType = 'ciudad' AND LOWER(targetArea) = LOWER(?) ORDER BY RANDOM() LIMIT 1`,
-    [location],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: "Database error" });
-      }
-      if (rows.length === 0) {
-        return res.status(404).json({ error: "No ads found" });
-      }
-      res.json(rows[0]);
-    }
-  );
+app.get('/', (req, res) => {
+  res.send('GeoAdvertising API is running.');
 });
 
-// Iniciar servidor
-app.listen(port, () => {
-  console.log(`Servidor backend escuchando en http://localhost:${port}`);
+app.post('/api/campaigns', (req, res) => {
+  const { advertiser, title, imageUrl, targetType, targetArea } = req.body;
+
+  if (!advertiser || !title || !imageUrl || !targetType || !targetArea) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const nuevaCampaña = { advertiser, title, imageUrl, targetType, targetArea };
+  campañas.push(nuevaCampaña);
+
+  res.status(201).json({ message: 'Campaña creada', campaña: nuevaCampaña });
+});
+
+app.get('/api/campaigns', (req, res) => {
+  res.json(campañas);
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor backend escuchando en http://localhost:${PORT}`);
 });
