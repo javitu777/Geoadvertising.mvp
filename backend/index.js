@@ -1,17 +1,18 @@
- const express = require('express');
+const express = require('express');
 const cors = require('cors');
+const bodyParser = require('body-parser');
+
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-let campañas = [];
+// Campañas almacenadas en memoria (puedes cambiar a una DB luego)
+const campaigns = [];
 
-app.get('/', (req, res) => {
-  res.send('GeoAdvertising API is running.');
-});
-
+// Ruta para subir campañas
 app.post('/api/campaigns', (req, res) => {
   const { advertiser, title, imageUrl, targetType, targetArea } = req.body;
 
@@ -19,14 +20,14 @@ app.post('/api/campaigns', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const nuevaCampaña = { advertiser, title, imageUrl, targetType, targetArea };
-  campañas.push(nuevaCampaña);
-
-  res.status(201).json({ message: 'Campaña creada', campaña: nuevaCampaña });
+  const newCampaign = { advertiser, title, imageUrl, targetType, targetArea };
+  campaigns.push(newCampaign);
+  return res.status(201).json({ message: 'Campaña guardada con éxito' });
 });
 
+// Ruta para obtener campañas (por ciudad)
 app.get('/api/campaigns', (req, res) => {
-  res.json(campañas);
+  res.json(campaigns);
 });
 
 app.listen(PORT, () => {
