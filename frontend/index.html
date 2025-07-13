@@ -1,31 +1,143 @@
- <form id="campaignForm">
-  <label>Nombre del anunciante:
-    <input type="text" id="advertiser" required />
-  </label>
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>🗺️ Crear nueva campaña en SIMBIOSIS</title>
+  <style>
+    body { font-family: sans-serif; background: #f2f2f2; padding: 2rem; }
+    h1 { color: #333; }
+    form { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    label { display: block; margin-top: 1rem; }
+    input, select, button, textarea {
+      width: 100%; padding: 0.5rem; margin-top: 0.5rem;
+      border: 1px solid #ccc; border-radius: 4px;
+    }
+    #map { height: 300px; margin-top: 1rem; display: none; }
+    .hidden { display: none; }
+    .success { color: green; margin-top: 1rem; }
+    .error { color: red; margin-top: 1rem; }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+</head>
+<body>
+  <h1>🗺️ Crear nueva campaña en SIMBIOSIS</h1>
+  <p>Elige si deseas anunciarte por ciudad o dibujando un área en el mapa.</p>
 
-  <label>Título del anuncio:
-    <input type="text" id="title" required />
-  </label>
-
-  <label>URL de la imagen:
-    <input type="text" id="imageUrl" required />
-  </label>
-
-  <label>Tipo de segmentación:
-    <select id="targetType" required>
-      <option value="ciudad">Por ciudad</option>
-      <option value="mapa">Dibujando en mapa</option>
-    </select>
-  </label>
-
-  <div id="cityInput">
-    <label>Ciudad:
-      <input type="text" id="city" />
+  <form id="campaignForm">
+    <label>Nombre del anunciante:
+      <input type="text" id="advertiser" required />
     </label>
-  </div>
 
-  <div id="map"></div>
+    <label>Título del anuncio:
+      <input type="text" id="title" required />
+    </label>
 
-  <button type="submit">Subir campaña</button>
-  <div id="status"></div>
-</form>
+    <label>URL de la imagen:
+      <input type="text" id="imageUrl" required />
+    </label>
+
+    <label>Tipo de segmentación:
+      <select id="targetType" required>
+        <option value="ciudad">Por ciudad</option>
+        <option value="mapa">Dibujando en mapa</option>
+      </select>
+    </label>
+
+    <div id="cityInput">
+      <label>Ciudad:
+        <input type="text" id="city" />
+      </label>
+    </div>
+
+    <div id="map"></div>
+
+    <button type="submit">Subir campaña</button>
+    <div id="status"></div>
+  </form>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script>
+    const form = document.getElementById('campaignForm');
+    const targetType = document.getElementById('targetType');
+    const cityInput = document.getElementById('cityInput');
+    const mapContainer = document.getElementById('map');
+    const status = document.getElementById('status');
+    let drawnGeoJSON = null;
+
+    targetType.addEventListener('change', () => {
+      if (targetType.value === 'ciudad') {
+        cityInput.style.display = 'block';
+        mapContainer.style.display = 'none';
+      } else {
+        cityInput.style.display = 'none';
+        mapContainer.style.display = 'block';
+        if (!window.mapInitialized) initMap();
+      }
+    });
+
+    function initMap() {
+      const map = L.map('map').setView([40.4168, -3.7038], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      const drawControl = new L.Control.Draw({
+        draw: { marker: false, polyline: false, rectangle: false, circle: false, circlemarker: false },
+        edit: { featureGroup: new L.FeatureGroup().addTo(map) }
+      });
+      map.addControl(drawControl);
+
+      map.on(L.Draw.Event.CREATED, function (e) {
+        const layer = e.layer;
+        drawControl.options.edit.featureGroup.clearLayers();
+        drawControl.options.edit.featureGroup.addLayer(layer);
+        drawnGeoJSON = layer.toGeoJSON();
+      });
+
+      window.mapInitialized = true;
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.textContent = '';
+
+      const data = {
+        advertiser: document.getElementById('advertiser').value,
+        title: document.getElementById('title').value,
+        imageUrl: document.getElementById('imageUrl').value,
+        targetType: targetType.value
+      };
+
+      if (targetType.value === 'ciudad') {
+        data.targetArea = document.getElementById('city').value;
+      } else if (targetType.value === 'mapa' && drawnGeoJSON) {
+        data.targetArea = drawnGeoJSON;
+      } else {
+        status.textContent = '❌ Por favor, dibuja un área en el mapa.';
+        status.className = 'error';
+        return;
+      }
+
+      try {
+        const res = await fetch('https://geoadvertising-mvp-4.onrender.com/api/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          status.textContent = '✅ Campaña subida con éxito';
+          status.className = 'success';
+          form.reset();
+        } else {
+          const error = await res.json();
+          status.textContent = `❌ Error: ${error.message || 'Error al subir la campaña'}`;
+          status.className = 'error';
+        }
+      } catch (err) {
+        status.textContent = '❌ Error de red al enviar la campaña.';
+        status.className = 'error';
+      }
+    });
+  </script>
+</body>
+</html>
